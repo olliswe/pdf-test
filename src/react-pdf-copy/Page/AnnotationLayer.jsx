@@ -29,7 +29,6 @@ export class AnnotationLayerInternal extends PureComponent {
 
   componentDidUpdate(prevProps) {
     const { page, renderInteractiveForms } = this.props;
-
     if (
       (prevProps.page && page !== prevProps.page) ||
       renderInteractiveForms !== prevProps.renderInteractiveForms
@@ -51,6 +50,7 @@ export class AnnotationLayerInternal extends PureComponent {
     cancellable.promise
       .then((annotations) => {
         this.setState({ annotations }, this.onLoadSuccess);
+        this.renderAnnotationLayer(annotations);
       })
       .catch((error) => {
         this.onLoadError(error);
@@ -75,9 +75,11 @@ export class AnnotationLayerInternal extends PureComponent {
   };
 
   onRenderSuccess = () => {
+    const { annotations } = this.state;
     const { onRenderAnnotationLayerSuccess } = this.props;
 
-    if (onRenderAnnotationLayerSuccess) onRenderAnnotationLayerSuccess();
+    if (onRenderAnnotationLayerSuccess)
+      onRenderAnnotationLayerSuccess(annotations);
   };
 
   /**
@@ -97,13 +99,7 @@ export class AnnotationLayerInternal extends PureComponent {
     return page.getViewport({ scale, rotation: rotate });
   }
 
-  renderAnnotationLayer() {
-    const { annotations } = this.state;
-
-    if (!annotations) {
-      return;
-    }
-
+  renderAnnotationLayer(annotations) {
     const { imageResourcesPath, linkService, page, renderInteractiveForms } =
       this.props;
 
@@ -136,9 +132,7 @@ export class AnnotationLayerInternal extends PureComponent {
         ref={(ref) => {
           this.annotationLayer = ref;
         }}
-      >
-        {this.renderAnnotationLayer()}
-      </div>
+      />
     );
   }
 }

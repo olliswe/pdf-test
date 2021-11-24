@@ -1,45 +1,68 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactJson from "react-json-view";
 import { Document, Page } from "./react-pdf-copy/entry.webpack";
 import "./react-pdf-copy/Page/AnnotationLayer.css";
+import findIndex from "lodash/findIndex";
+
+const PREFILL = {
+  first_name: "John Doe",
+  address_1: "MehringDamm 1",
+};
 
 function App() {
-  const [annotations, setAnnotations] = useState();
   const [formValues, setFormValues] = useState();
+  const eventListeners = useRef([]);
 
-  useEffect(() => {
-    if (!annotations) return;
+  const onSuccess = useCallback((annotations) => {
     setFormValues(
       annotations.map((annotation) => ({
         fieldName: annotation.fieldName,
         fieldId: annotation.id,
         fieldType: annotation.fieldType,
-        fieldValue: annotation.fieldValue,
+        fieldValue: PREFILL[annotation.fieldName] || annotation.fieldValue,
         dimensions: annotation.rect,
       }))
     );
-  }, [annotations]);
 
-  useEffect(() => {
-    if (!annotations) return;
-    annotations.forEach(({ id }) => {
+    annotations.forEach(({ id, fieldName }) => {
       const inputEl = document.getElementById(id);
-      console.log(inputEl);
 
-      inputEl.addEventListener("input", (e) => {
-        console.log("foo"); // THIS EVENT LISTENER IS NOT BEING ATTACHED :(((
+      if (PREFILL[fieldName]) {
+        inputEl.value = PREFILL[fieldName];
+      }
+
+      const eventListener = (e) => {
         setFormValues((prev) => {
-          const currentFormValueIndex = prev.indexOf((x) => x.id === id);
-          const currentFormValue = prev[currentFormValueIndex];
-          const newFormValues = prev.slice().splice(1, currentFormValueIndex, {
+          const oldState = prev;
+          const currentFormValueIndex = findIndex(
+            oldState,
+            (x) => x.fieldId === id
+          );
+          const currentFormValue = oldState[currentFormValueIndex];
+          const newFormValues = oldState.slice();
+          newFormValues.splice(currentFormValueIndex, 1, {
             ...currentFormValue,
             fieldValue: e.target.value,
           });
           return newFormValues;
         });
-      });
+      };
+
+      inputEl.addEventListener("input", eventListener);
+      eventListeners.current = [
+        ...eventListeners.current,
+        { inputEl, eventListener },
+      ];
     });
-  }, [annotations]);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      eventListeners.current.forEach(({ inputEl, eventListener }) => {
+        inputEl.removeEventListener("input", eventListener);
+      });
+    };
+  }, []);
 
   return (
     <div style={{ display: "flex" }}>
@@ -47,11 +70,10 @@ function App() {
         <Page
           pageNumber={1}
           renderInteractiveForms={true}
-          onGetAnnotationsSuccess={(annotations) => setAnnotations(annotations)}
-          onAnnotationsChange={() => console.log("hello")}
+          onRenderAnnotationLayerSuccess={onSuccess}
         />
       </Document>
-      <ReactJson src={formValues} collapsed={true} />
+      <ReactJson src={formValues} />
     </div>
   );
 }
