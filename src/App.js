@@ -1,8 +1,7 @@
 import {useEffect, useState} from 'react';
-import {Document, Page} from 'react-pdf/dist/esm/entry.webpack';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import ReactJson from "react-json-view";
-
+import {Document, Page} from "./react-pdf-copy/entry.webpack";
+import './react-pdf-copy/Page/AnnotationLayer.css'
 
 function App() {
   const [annotations, setAnnotations] = useState()
@@ -18,26 +17,6 @@ function App() {
             dimensions: annotation.rect
         })))
     }, [annotations]);
-
-    useEffect(() => {
-        if(!annotations) return
-        annotations.forEach(({id})=>{
-            const inputEl = document.getElementById(id)
-            console.log(inputEl)
-
-            inputEl.addEventListener('input', (e)=>{
-                console.log('foo') // THIS EVENT LISTENER IS NOT BEING ATTACHED :(((
-                setFormValues(prev=>{
-                    const currentFormValueIndex = prev.indexOf(x=>x.id ===id)
-                    const currentFormValue = prev[currentFormValueIndex]
-                    const newFormValues = prev.slice().splice(1, currentFormValueIndex, {...currentFormValue, fieldValue:e.target.value} )
-                    return newFormValues
-                })
-            })
-        })
-    }, [annotations]);
-
-
 
 
 
