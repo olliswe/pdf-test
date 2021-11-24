@@ -42,38 +42,49 @@ function App() {
           const newFormValues = oldState.slice();
           newFormValues.splice(currentFormValueIndex, 1, {
             ...currentFormValue,
-            fieldValue: e.target.value,
+            fieldValue:
+              inputEl.type === "checkbox" ? e.target.checked : e.target.value,
           });
           return newFormValues;
         });
       };
 
-      inputEl.addEventListener("input", eventListener);
+      const eventType = inputEl.type === "checkbox" ? "change" : "input";
+      inputEl.addEventListener(eventType, eventListener);
       eventListeners.current = [
         ...eventListeners.current,
-        { inputEl, eventListener },
+        { inputEl, eventType, eventListener },
       ];
+    });
+  }, []);
+
+  const removeEventListeners = useCallback(() => {
+    eventListeners.current.forEach(({ inputEl, eventType, eventListener }) => {
+      inputEl.removeEventListener(eventType, eventListener);
     });
   }, []);
 
   useEffect(() => {
     return () => {
-      eventListeners.current.forEach(({ inputEl, eventListener }) => {
-        inputEl.removeEventListener("input", eventListener);
-      });
+      removeEventListeners();
     };
-  }, []);
+  }, [removeEventListeners]);
 
   return (
-    <div style={{ display: "flex" }}>
-      <Document file={`${window.location.origin}/auform.pdf`}>
-        <Page
-          pageNumber={1}
-          renderInteractiveForms={true}
-          onRenderAnnotationLayerSuccess={onSuccess}
-        />
-      </Document>
-      <ReactJson src={formValues} />
+    <div>
+      <button onClick={() => removeEventListeners()}>
+        Remove event listeners
+      </button>
+      <div style={{ display: "flex" }}>
+        <Document file={`${window.location.origin}/auform.pdf`}>
+          <Page
+            pageNumber={1}
+            renderInteractiveForms={true}
+            onRenderAnnotationLayerSuccess={onSuccess}
+          />
+        </Document>
+        <ReactJson src={formValues} />
+      </div>
     </div>
   );
 }
